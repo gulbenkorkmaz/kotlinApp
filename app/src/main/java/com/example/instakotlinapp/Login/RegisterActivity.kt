@@ -9,8 +9,10 @@ import android.view.View
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentManager
+import com.example.instakotlinapp.Model.Users
 import com.example.instakotlinapp.R
 import com.example.instakotlinapp.utils.EventbusDataEvents
+import com.google.firebase.database.*
 import kotlinx.android.synthetic.main.activity_register.*
 import org.greenrobot.eventbus.EventBus
 
@@ -20,6 +22,8 @@ class RegisterActivity : AppCompatActivity(), FragmentManager.OnBackStackChanged
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_register)
+
+
         manager = supportFragmentManager
         manager.addOnBackStackChangedListener(this)
 
@@ -102,6 +106,8 @@ class RegisterActivity : AppCompatActivity(), FragmentManager.OnBackStackChanged
 
             } else { /// girilen email uygunsa
                 if(isValidEmail(etGirisYontemi.text.toString())){
+
+
                     loginRoot.visibility = View.GONE
                     loginContainer.visibility = View.VISIBLE
                     var transaction = supportFragmentManager.beginTransaction()
