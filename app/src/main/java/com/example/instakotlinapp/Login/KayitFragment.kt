@@ -1,6 +1,7 @@
 package com.example.instakotlinapp.Login
 
 import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -49,6 +50,13 @@ class KayitFragment : Fragment() {
             mAuth.signOut()
 
         }
+         view.tvGirisYap.setOnClickListener {
+             var intent= Intent(activity,LoginActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION)
+             startActivity(intent)
+
+
+
+         }
 
         mRef= FirebaseDatabase.getInstance().reference
 
