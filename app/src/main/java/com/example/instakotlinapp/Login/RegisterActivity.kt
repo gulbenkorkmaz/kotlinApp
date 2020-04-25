@@ -19,10 +19,13 @@ import org.greenrobot.eventbus.EventBus
 
 class RegisterActivity : AppCompatActivity(), FragmentManager.OnBackStackChangedListener {
     lateinit var manager: FragmentManager
+    lateinit var mRef:DatabaseReference
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_register)
+
+        mRef=FirebaseDatabase.getInstance().reference
 
 
         manager = supportFragmentManager
@@ -93,15 +96,41 @@ class RegisterActivity : AppCompatActivity(), FragmentManager.OnBackStackChanged
         btnIleri.setOnClickListener {
             //girilen telefon numarası uygunssa
             if (etGirisYontemi.hint.toString().equals("Telefon")) {
+                var telefonKullanimdaMi=false
 
                 if(isValidTelefon(etGirisYontemi.text.toString())){
-                    loginRoot.visibility = View.GONE
-                    loginContainer.visibility = View.VISIBLE
-                    var transaction = supportFragmentManager.beginTransaction()
-                    transaction.replace(R.id.loginContainer, TelefonKoduGirFragment())
-                    transaction.addToBackStack("telefonKoduGirFragmentEklendi")
-                    transaction.commit()
-                    EventBus.getDefault().postSticky(EventbusDataEvents.KayitBilgileriniGonder(etGirisYontemi.text.toString(), null, null, null, false))
+                    mRef.child("kullanıcılar").addListenerForSingleValueEvent(object :ValueEventListener{
+                        override fun onCancelled(p0: DatabaseError) {
+
+                        }
+
+                        override fun onDataChange(p0: DataSnapshot) {
+                            if(p0!!.getValue()!=null){
+                                for(user in p0!!.children){
+                                    var okunanKullanici=user.getValue(Users::class.java)
+                                    if(okunanKullanici!!.telefon_numarasi.equals(etGirisYontemi.text.toString())){
+                                        Toast.makeText(this@RegisterActivity,"Telefon Numarası Kullanımda",Toast.LENGTH_SHORT).show()
+                                        telefonKullanimdaMi=true
+                                        break
+                                    }
+                                }
+                                if(telefonKullanimdaMi==false){
+                                    loginRoot.visibility = View.GONE
+                                    loginContainer.visibility = View.VISIBLE
+                                    var transaction = supportFragmentManager.beginTransaction()
+                                    transaction.replace(R.id.loginContainer, TelefonKoduGirFragment())
+                                    transaction.addToBackStack("telefonKoduGirFragmentEklendi")
+                                    transaction.commit()
+                                    EventBus.getDefault().postSticky(EventbusDataEvents.KayitBilgileriniGonder(etGirisYontemi.text.toString(), null, null, null, false))
+
+                                }
+                            }
+
+
+                        }
+
+                    })
+
 
                 }else{// eğer telefn numarası uygun değilse ekrana mesaj yazar
                     Toast.makeText(this,"Lütfen Geçerli Bir Telefon Numarası Giriniz",Toast.LENGTH_SHORT).show()
@@ -111,23 +140,48 @@ class RegisterActivity : AppCompatActivity(), FragmentManager.OnBackStackChanged
 
             } else { /// girilen email uygunsa
                 if(isValidEmail(etGirisYontemi.text.toString())){
+                    var emailKullanimdaMi=false
+                    mRef.child("kullanıcılar").addListenerForSingleValueEvent(object :ValueEventListener{
+                        override fun onCancelled(p0: DatabaseError) {
+
+                        }
+
+                        override fun onDataChange(p0: DataSnapshot) {
+                            if(p0!!.getValue()!=null){
+                                for(user in p0!!.children){
+                                    var okunanKullanici=user.getValue(Users::class.java)
+                                    if(okunanKullanici!!.email!!.equals(etGirisYontemi.text.toString())){
+                                        Toast.makeText(this@RegisterActivity,"Email Kullanımda",Toast.LENGTH_SHORT).show()
+                                        emailKullanimdaMi=true
+                                        break
+                                    }
+                                }
+                                if(emailKullanimdaMi==false){
+                                    loginRoot.visibility = View.GONE
+                                    loginContainer.visibility = View.VISIBLE
+                                    var transaction = supportFragmentManager.beginTransaction()
+                                    transaction.replace(R.id.loginContainer, KayitFragment())
+                                    transaction.addToBackStack("EmailGirisYontemiFragmentEklendi")
+                                    transaction.commit()
+                                    EventBus.getDefault().postSticky(
+                                        EventbusDataEvents.KayitBilgileriniGonder(
+                                            null,
+                                            etGirisYontemi.text.toString(),
+                                            null,
+                                            null,
+                                            true
+                                        )
+                                    )
+
+                                }
+                            }
+
+                        }
+
+                    })
 
 
-                    loginRoot.visibility = View.GONE
-                    loginContainer.visibility = View.VISIBLE
-                    var transaction = supportFragmentManager.beginTransaction()
-                    transaction.replace(R.id.loginContainer, KayitFragment())
-                    transaction.addToBackStack("EmailGirisYontemiFragmentEklendi")
-                    transaction.commit()
-                    EventBus.getDefault().postSticky(
-                        EventbusDataEvents.KayitBilgileriniGonder(
-                            null,
-                            etGirisYontemi.text.toString(),
-                            null,
-                            null,
-                            true
-                        )
-                    )
+
 
                 }else {// email uygun değilse ekrana mesaj yazar
 

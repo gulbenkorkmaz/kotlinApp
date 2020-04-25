@@ -21,8 +21,7 @@ import com.google.android.gms.tasks.Task
 import com.google.firebase.auth.AuthResult
 import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.DatabaseReference
-import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.*
 import kotlinx.android.synthetic.main.fragment_kayit.*
 import kotlinx.android.synthetic.main.fragment_kayit.view.*
 import org.greenrobot.eventbus.EventBus
@@ -50,6 +49,11 @@ class KayitFragment : Fragment() {
             mAuth.signOut()
 
         }
+        tvGirisYap.setOnClickListener {
+            var intent=Intent(activity,LoginActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION)
+            startActivity(intent)
+
+        }
          view.tvGirisYap.setOnClickListener {
              var intent= Intent(activity,LoginActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION)
              startActivity(intent)
@@ -65,135 +69,167 @@ class KayitFragment : Fragment() {
         view.etSifre.addTextChangedListener(watcher)
 
         view.btnGiris.setOnClickListener {
-            //kullanıcı email ile kaydolmak istiyorsa
-            if(emailİleKayitİşlemi){
-                var sifre=view.etSifre.text.toString()// edit texte bulunan sifreyi alır.
-                var adSoyad=view.etAdSoyad.text.toString()//edit texte bbulunan ad soyadı alır
-                var kullaniciAdi=etKullancıAdı.text.toString()//edit textte olan kullanıcı adını alır
+            var userNameKullanimdaMi=false
+            mRef.child("kullanıcılar").addListenerForSingleValueEvent(object :ValueEventListener {
+                override fun onCancelled(p0: DatabaseError) {
 
+                }
 
+                override fun onDataChange(p0: DataSnapshot) {
+                    if(p0!!.getValue()!=null){
+                        for(user in p0!!.children){
+                            var okunanKullanici=user.getValue(Users::class.java)
+                            if(okunanKullanici!!.kullanici_adi!!.equals(view.etKullancıAdı.text.toString())){
+                                Toast.makeText(activity,"Kullanıcı Adı Kullanımda",Toast.LENGTH_SHORT).show()
+                                userNameKullanimdaMi=true
+                                break
 
-
-                mAuth.createUserWithEmailAndPassword(gelenEmail,sifre)
-                    .addOnCompleteListener(object : OnCompleteListener<AuthResult>{
-                        override fun onComplete(p0: Task<AuthResult>) {
-
-
-                            if(p0!!.isSuccessful)///kullanıcı bilgilerle başarılı giriş yapmışsa
-                            {
-                                Toast.makeText(activity,"Oturum Açıldı",Toast.LENGTH_SHORT).show()
-                                var kullaniciID=mAuth.currentUser!!.uid.toString()
-                                // kullanıcı idsini alırız.
-                                ///oturum açan kullanıcının verilerini database kaydetme
-
-                                var kaydedilecekKullanici=Users(gelenEmail,sifre,kullaniciAdi,adSoyad, " "," " ,kullaniciID)
-                                mRef.child("kullanıcılar").child(kullaniciID).setValue(kaydedilecekKullanici) // veri tabanına kaydetmek için kullanıcılar ve userıd düğümü oluşturulur.
-                                    .addOnCompleteListener(object :OnCompleteListener<Void>{
-                                        override fun onComplete(p0: Task<Void>) {
-                                           if(p0!!.isSuccessful)// eğer kayıt başarılı şekilde gerçekleşmişse
-                                           {
-                                               Toast.makeText(activity,"Kullanıcı Kaydedildi",Toast.LENGTH_SHORT).show()
-                                           } else{
-
-                                               ///kayıt işlemi başarısız olursa o kullanıcıyı sil ve kuyllanıcı bilgilerini baştan girsin
-
-                                               mAuth.currentUser!!.delete()
-                                                   .addOnCompleteListener(object : OnCompleteListener<Void> {
-                                                       override fun onComplete(p0: Task<Void>) {
-                                                           if (p0!!.isSuccessful) {//kullanıcı verilerini silme işelmi başarılı olmuşsa
-                                                               Toast.makeText(activity, "Kullanıcı Kaydedilemedi.Tekrar Deneyin", Toast.LENGTH_SHORT).show()
-                                                           }
-
-                                                       }
-                                                   })
-                                           }
-                                        }
-
-                                    })
-
-
-                            }else ////kullanıcı başarılı giriş yapamamışsa
-
-                            {
-                                Toast.makeText(activity,"Oturum Açılamadı",Toast.LENGTH_SHORT).show()
                             }
                         }
-
-
-                    })
-
-
-            }
-
-            ///kulanıcı telefon numarasıyla kayıt ol mak istiyor.
-            else {
-
-
-                var sifre=view.etSifre.text.toString()// edit texte bulunan sifreyi alır.
-                var adSoyad=view.etAdSoyad.text.toString()//edit texte bbulunan ad soyadı alır
-                var kullaniciAdi=view.etKullancıAdı.text.toString()  //edit textte olan kullanıcı adını alır
-
-
-                var sahteEmail=telNo+"@gulben.com" //kullanıcı +90545686945@gulben.com şeklinde tutar
-                //çünkü kullanıcı ilerde emailini değiştirmek isteyebilir o yüzden email kısmında böyle turulur
-
-                mAuth.createUserWithEmailAndPassword(sahteEmail,sifre)
-                    .addOnCompleteListener(object : OnCompleteListener<AuthResult>{
-                        override fun onComplete(p0: Task<AuthResult>) {
-
-                            if(p0!!.isSuccessful)///kullanıcı bilgilerle başarılı giriş yapmışsa
-                            {
-                                Toast.makeText(activity,"Oturum Açıldı",Toast.LENGTH_SHORT).show()
-                                var kullaniciID=mAuth.currentUser!!.uid.toString()// kullanıcı idsini alırız.
+                        if(userNameKullanimdaMi==false){
+                            //kullanıcı email ile kaydolmak istiyorsa
+                            if(emailİleKayitİşlemi){
+                                var sifre=view.etSifre.text.toString()// edit texte bulunan sifreyi alır.
+                                var adSoyad=view.etAdSoyad.text.toString()//edit texte bbulunan ad soyadı alır
+                                var kullaniciAdi=etKullancıAdı.text.toString()//edit textte olan kullanıcı adını alır
 
 
 
-                                ///oturum açan kullanıcının verilerini database kaydetme
 
-                                var kaydedilecekKullanici=Users( " ", sifre,kullaniciAdi,adSoyad,telNo,sahteEmail,kullaniciID)
-                                mRef.child("kullanıcılar").child(kullaniciID).setValue(kaydedilecekKullanici) // veri tabanına kaydetmek için kullanıcılar ve userıd düğümü oluşturulur.
-                                    .addOnCompleteListener(object :OnCompleteListener<Void>{
-                                        override fun onComplete(p0: Task<Void>) {
-                                            if(p0!!.isSuccessful)// eğer kayıt başarılı şekilde gerçekleşmişse
+                                mAuth.createUserWithEmailAndPassword(gelenEmail,sifre)
+                                    .addOnCompleteListener(object : OnCompleteListener<AuthResult>{
+                                        override fun onComplete(p0: Task<AuthResult>) {
+
+
+                                            if(p0!!.isSuccessful)///kullanıcı bilgilerle başarılı giriş yapmışsa
                                             {
-                                                Toast.makeText(activity,"Kullanıcı Kaydedildi",Toast.LENGTH_SHORT).show()
-                                            } else{
-                                                ///kayıt işlemi başarısız olursa o kullanıcıyı sil ve kuyllanıcı bilgilerini baştan girsin
+                                                Toast.makeText(activity,"Oturum Açıldı",Toast.LENGTH_SHORT).show()
+                                                var kullaniciID=mAuth.currentUser!!.uid.toString()
+                                                // kullanıcı idsini alırız.
+                                                ///oturum açan kullanıcının verilerini database kaydetme
 
-                                                mAuth.currentUser!!.delete()
-                                                    .addOnCompleteListener(object : OnCompleteListener<Void>{
+                                                var kaydedilecekKullanici=Users(gelenEmail,sifre,kullaniciAdi,adSoyad, " "," " ,kullaniciID)
+                                                mRef.child("kullanıcılar").child(kullaniciID).setValue(kaydedilecekKullanici) // veri tabanına kaydetmek için kullanıcılar ve userıd düğümü oluşturulur.
+                                                    .addOnCompleteListener(object :OnCompleteListener<Void>{
                                                         override fun onComplete(p0: Task<Void>) {
-                                                            if(p0!!.isSuccessful){//kullanıcı verilerini silme işelmi başarılı olmuşsa
-                                                                Toast.makeText(activity,"Kullanıcı Kaydedilemedi.Tekrar Deneyin",Toast.LENGTH_SHORT).show()
+                                                            if(p0!!.isSuccessful)// eğer kayıt başarılı şekilde gerçekleşmişse
+                                                            {
+                                                                Toast.makeText(activity,"Kullanıcı Kaydedildi",Toast.LENGTH_SHORT).show()
+                                                            } else{
 
+                                                                ///kayıt işlemi başarısız olursa o kullanıcıyı sil ve kuyllanıcı bilgilerini baştan girsin
+
+                                                                mAuth.currentUser!!.delete()
+                                                                    .addOnCompleteListener(object : OnCompleteListener<Void> {
+                                                                        override fun onComplete(p0: Task<Void>) {
+                                                                            if (p0!!.isSuccessful) {//kullanıcı verilerini silme işelmi başarılı olmuşsa
+                                                                                Toast.makeText(activity, "Kullanıcı Kaydedilemedi.Tekrar Deneyin", Toast.LENGTH_SHORT).show()
+                                                                            }
+
+                                                                        }
+                                                                    })
                                                             }
-
-
                                                         }
-
 
                                                     })
 
 
+                                            }else ////kullanıcı başarılı giriş yapamamışsa
+
+                                            {
+                                                Toast.makeText(activity,"Oturum Açılamadı",Toast.LENGTH_SHORT).show()
                                             }
                                         }
+
 
                                     })
 
 
-
-                            }else ////kullanıcı başarılı giriş yapamamışsa
-
-                            {
-                                Toast.makeText(activity,"Oturum Açılamadı",Toast.LENGTH_SHORT).show()
                             }
+
+                            ///kulanıcı telefon numarasıyla kayıt ol mak istiyor.
+                            else {
+
+
+                                var sifre=view.etSifre.text.toString()// edit texte bulunan sifreyi alır.
+                                var adSoyad=view.etAdSoyad.text.toString()//edit texte bbulunan ad soyadı alır
+                                var kullaniciAdi=view.etKullancıAdı.text.toString()  //edit textte olan kullanıcı adını alır
+
+
+                                var sahteEmail=telNo+"@gulben.com" //kullanıcı +90545686945@gulben.com şeklinde tutar
+                                //çünkü kullanıcı ilerde emailini değiştirmek isteyebilir o yüzden email kısmında böyle turulur
+
+                                mAuth.createUserWithEmailAndPassword(sahteEmail,sifre)
+                                    .addOnCompleteListener(object : OnCompleteListener<AuthResult>{
+                                        override fun onComplete(p0: Task<AuthResult>) {
+
+                                            if(p0!!.isSuccessful)///kullanıcı bilgilerle başarılı giriş yapmışsa
+                                            {
+                                                Toast.makeText(activity,"Oturum Açıldı",Toast.LENGTH_SHORT).show()
+                                                var kullaniciID=mAuth.currentUser!!.uid.toString()// kullanıcı idsini alırız.
+
+
+
+                                                ///oturum açan kullanıcının verilerini database kaydetme
+
+                                                var kaydedilecekKullanici=Users( " ", sifre,kullaniciAdi,adSoyad,telNo,sahteEmail,kullaniciID)
+                                                mRef.child("kullanıcılar").child(kullaniciID).setValue(kaydedilecekKullanici) // veri tabanına kaydetmek için kullanıcılar ve userıd düğümü oluşturulur.
+                                                    .addOnCompleteListener(object :OnCompleteListener<Void>{
+                                                        override fun onComplete(p0: Task<Void>) {
+                                                            if(p0!!.isSuccessful)// eğer kayıt başarılı şekilde gerçekleşmişse
+                                                            {
+                                                                Toast.makeText(activity,"Kullanıcı Kaydedildi",Toast.LENGTH_SHORT).show()
+                                                            } else{
+                                                                ///kayıt işlemi başarısız olursa o kullanıcıyı sil ve kuyllanıcı bilgilerini baştan girsin
+
+                                                                mAuth.currentUser!!.delete()
+                                                                    .addOnCompleteListener(object : OnCompleteListener<Void>{
+                                                                        override fun onComplete(p0: Task<Void>) {
+                                                                            if(p0!!.isSuccessful){//kullanıcı verilerini silme işelmi başarılı olmuşsa
+                                                                                Toast.makeText(activity,"Kullanıcı Kaydedilemedi.Tekrar Deneyin",Toast.LENGTH_SHORT).show()
+
+                                                                            }
+
+
+                                                                        }
+
+
+                                                                    })
+
+
+                                                            }
+                                                        }
+
+                                                    })
+
+
+
+                                            }else ////kullanıcı başarılı giriş yapamamışsa
+
+                                            {
+                                                Toast.makeText(activity,"Oturum Açılamadı",Toast.LENGTH_SHORT).show()
+                                            }
+                                        }
+
+
+                                    })
+
+
+                            }
+
+
                         }
+                    }
+
+                }
+
+            })
 
 
-                    })
 
 
-            }
+
+
 
 
 
